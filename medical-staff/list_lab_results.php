@@ -28,12 +28,14 @@ $stmt = $conn->prepare(
         p.RegNo,
         l.name as lab_test_name,
         clt.CustomTestName,
-        MAX(ltr.EnteredAt) as result_date
+        MAX(ltr.EnteredAt) as result_date,
+        au.username as entered_by_username
      FROM consultation_lab_tests clt
      JOIN consultations c ON clt.ConsultationID = c.ConsultationID
      JOIN registration p ON c.RegID = p.RegID
      JOIN lab_test_results ltr ON clt.CLT_ID = ltr.CLT_ID
      LEFT JOIN laboratory l ON clt.LabTestID = l.Lid
+     LEFT JOIN admin_user au ON ltr.EnteredBy = au.id
      WHERE ltr.is_deleted = 0
      GROUP BY clt.CLT_ID
      ORDER BY result_date DESC"
@@ -69,6 +71,7 @@ $stmt->close();
                     <th>Result Date</th>
                     <th>Pet Name</th>
                     <th>Test Name</th>
+                    <th>Entered By</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -79,6 +82,7 @@ $stmt->close();
                             <td><?php echo date('d-m-Y H:i', strtotime($test['result_date'])); ?></td>
                             <td><?php echo htmlspecialchars($test['petnam']); ?></td>
                             <td><?php echo htmlspecialchars($test['lab_test_name'] ?: $test['CustomTestName']); ?></td>
+                            <td><?php echo htmlspecialchars($test['entered_by_username']); ?></td>
                             <td>
                                 <a href="view_lab_result.php?clt_id=<?php echo $test['CLT_ID']; ?>">View</a> |
                                 <a href="edit_lab_result.php?clt_id=<?php echo $test['CLT_ID']; ?>">Edit</a> |
@@ -88,7 +92,7 @@ $stmt->close();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="4">No completed lab results found.</td>
+                        <td colspan="5">No completed lab results found.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

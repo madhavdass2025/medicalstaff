@@ -46,12 +46,13 @@ $stmt->close();
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_results'])) {
     $remarks = $_POST['remarks'];
+    $entered_by = $_SESSION['user_id'];
 
     foreach ($_POST['result_value'] as $result_id => $result_value) {
         $stmt = $conn->prepare(
-            "UPDATE lab_test_results SET ResultValue = ?, Remarks = ? WHERE ResultID = ?"
+            "UPDATE lab_test_results SET ResultValue = ?, Remarks = ?, EnteredBy = ?, EnteredAt = CURRENT_TIMESTAMP WHERE ResultID = ?"
         );
-        $stmt->bind_param("ssi", $result_value, $remarks, $result_id);
+        $stmt->bind_param("ssii", $result_value, $remarks, $entered_by, $result_id);
         $stmt->execute();
     }
     header("Location: list_lab_results.php?status=updated");

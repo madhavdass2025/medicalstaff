@@ -44,24 +44,25 @@ if ($test_info['LabTestID']) {
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_results'])) {
     $remarks = $_POST['remarks'];
+    $entered_by = $_SESSION['user_id'];
 
     if (count($subcategories) > 0) {
         // Handle results for tests with sub-categories
         foreach ($subcategories as $sub) {
             $result_value = $_POST['result_value'][$sub['SubCategoryID']];
             $stmt = $conn->prepare(
-                "INSERT INTO lab_test_results (CLT_ID, SubCategoryID, ResultValue, Remarks) VALUES (?, ?, ?, ?)"
+                "INSERT INTO lab_test_results (CLT_ID, SubCategoryID, ResultValue, Remarks, EnteredBy) VALUES (?, ?, ?, ?, ?)"
             );
-            $stmt->bind_param("iiss", $clt_id, $sub['SubCategoryID'], $result_value, $remarks);
+            $stmt->bind_param("iissi", $clt_id, $sub['SubCategoryID'], $result_value, $remarks, $entered_by);
             $stmt->execute();
         }
     } else {
         // Handle result for simple test
         $result_value = $_POST['result_value'];
         $stmt = $conn->prepare(
-            "INSERT INTO lab_test_results (CLT_ID, ResultValue, Remarks) VALUES (?, ?, ?)"
+            "INSERT INTO lab_test_results (CLT_ID, ResultValue, Remarks, EnteredBy) VALUES (?, ?, ?, ?)"
         );
-        $stmt->bind_param("iss", $clt_id, $result_value, $remarks);
+        $stmt->bind_param("issi", $clt_id, $result_value, $remarks, $entered_by);
         $stmt->execute();
     }
     header("Location: index.php?status=results_saved");

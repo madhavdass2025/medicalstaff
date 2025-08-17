@@ -33,9 +33,10 @@ if (!$test_info) {
 
 // Fetch results
 $stmt = $conn->prepare(
-    "SELECT ltr.*, lts.SubCategoryName, lts.Unit, lts.ReferenceRange
+    "SELECT ltr.*, lts.SubCategoryName, lts.Unit, lts.ReferenceRange, au.username as entered_by_username
      FROM lab_test_results ltr
      LEFT JOIN lab_test_subcategories lts ON ltr.SubCategoryID = lts.SubCategoryID
+     LEFT JOIN admin_user au ON ltr.EnteredBy = au.id
      WHERE ltr.CLT_ID = ? AND ltr.is_deleted = 0"
 );
 $stmt->bind_param("i", $clt_id);
@@ -89,6 +90,12 @@ $stmt->close();
                     <?php endforeach; ?>
                     </tbody>
                 </table>
+
+                <p>
+                    <strong>Entered By:</strong> <?php echo htmlspecialchars($results[0]['entered_by_username'] ?? 'N/A'); ?>
+                    on <?php echo date('d-m-Y H:i', strtotime($results[0]['EnteredAt'])); ?>
+                </p>
+
                 <?php if (!empty($results[0]['Remarks'])): ?>
                     <p><strong>Remarks:</strong> <?php echo nl2br(htmlspecialchars($results[0]['Remarks'])); ?></p>
                 <?php endif; ?>
