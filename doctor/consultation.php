@@ -232,8 +232,4 @@ if (count($patient_history) > 0) {
 <!-- ... all other tabs ... -->
 <div id="Finalize" class="tab-content"> ... </div>
 
-<script>
-// ... javascript ...
-</script>
-
 <?php include '../includes/footer.php'; ?>
