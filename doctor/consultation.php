@@ -159,6 +159,7 @@ if (count($patient_history) > 0) {
 <!-- HTML for the consultation page -->
 <style>
     .patient-details, .owner-details, .history-item, .preview-section { border: 1px solid #ccc; padding: 1em; margin-bottom: 1em; border-radius: 5px; }
+    .result-pending { color: #d9534f; font-style: italic; }
     .tab-nav { overflow: hidden; border-bottom: 1px solid #ccc; }
     .tab-nav button { background-color: inherit; float: left; border: none; outline: none; cursor: pointer; padding: 14px 16px; transition: 0.3s; }
     .tab-nav button:hover { background-color: #ddd; }
@@ -215,7 +216,7 @@ if (count($patient_history) > 0) {
                                         <?php endforeach; ?>
                                     </ul>
                                 <?php else: ?>
-                                    <small>(Result Pending)</small>
+                                    <small class="result-pending">(Result Pending)</small>
                                 <?php endif; ?>
                             </li>
                         <?php endforeach; ?>

@@ -15,7 +15,7 @@ $clt_id = $_GET['clt_id'];
 
 // Fetch main test info
 $stmt = $conn->prepare(
-    "SELECT clt.*, l.name as lab_test_name, p.petnam
+    "SELECT clt.*, c.ConsultationID, l.name as lab_test_name, p.petnam
      FROM consultation_lab_tests clt
      JOIN consultations c ON clt.ConsultationID = c.ConsultationID
      JOIN registration p ON c.RegID = p.RegID
@@ -64,6 +64,7 @@ $stmt->close();
         <nav><a href="list_lab_results.php">Back to List</a> | <a href="../logout.php">Logout</a></nav>
     </header>
     <div class="container">
+        <a href="print_results.php?consultation_id=<?php echo $test_info['ConsultationID']; ?>" target="_blank" class="print-button no-print" style="padding: 10px; background: #5cb85c; color: white; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; margin-bottom: 20px;">Print All Results for this Consultation</a>
         <h3>Test for <?php echo htmlspecialchars($test_info['petnam']); ?></h3>
         <h2><?php echo htmlspecialchars($test_info['lab_test_name'] ?: $test_info['CustomTestName']); ?></h2>
 

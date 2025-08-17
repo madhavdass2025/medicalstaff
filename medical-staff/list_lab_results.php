@@ -20,26 +20,53 @@ if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['clt_id
     $stmt->close();
 }
 
-// Fetch all completed lab tests
-$stmt = $conn->prepare(
-    "SELECT
-        clt.CLT_ID,
-        p.petnam,
-        p.RegNo,
-        l.name as lab_test_name,
-        clt.CustomTestName,
-        MAX(ltr.EnteredAt) as result_date,
-        au.username as entered_by_username
-     FROM consultation_lab_tests clt
-     JOIN consultations c ON clt.ConsultationID = c.ConsultationID
-     JOIN registration p ON c.RegID = p.RegID
-     JOIN lab_test_results ltr ON clt.CLT_ID = ltr.CLT_ID
-     LEFT JOIN laboratory l ON clt.LabTestID = l.Lid
-     LEFT JOIN admin_user au ON ltr.EnteredBy = au.id
-     WHERE ltr.is_deleted = 0
-     GROUP BY clt.CLT_ID
-     ORDER BY result_date DESC"
-);
+// Base query
+$sql = "SELECT
+            clt.CLT_ID,
+            c.ConsultationID,
+            p.petnam,
+            p.RegNo,
+            p.ownmob,
+            l.name as lab_test_name,
+            clt.CustomTestName,
+            MAX(ltr.EnteredAt) as result_date,
+            au.username as entered_by_username
+         FROM consultation_lab_tests clt
+         JOIN consultations c ON clt.ConsultationID = c.ConsultationID
+         JOIN registration p ON c.RegID = p.RegID
+         JOIN lab_test_results ltr ON clt.CLT_ID = ltr.CLT_ID
+         LEFT JOIN laboratory l ON clt.LabTestID = l.Lid
+         LEFT JOIN admin_user au ON ltr.EnteredBy = au.id
+         WHERE ltr.is_deleted = 0";
+
+// Handle search
+$search_params = [];
+$types = '';
+$search_term = $_GET['search_term'] ?? '';
+$search_by = $_GET['search_by'] ?? '';
+
+if (!empty($search_term)) {
+    if ($search_by == 'reg_no') {
+        $sql .= " AND p.RegNo LIKE ?";
+        $search_params[] = "%" . $search_term . "%";
+        $types .= 's';
+    } elseif ($search_by == 'mobile_no') {
+        $sql .= " AND p.ownmob LIKE ?";
+        $search_params[] = "%" . $search_term . "%";
+        $types .= 's';
+    } elseif ($search_by == 'consultation_id') {
+        $sql .= " AND c.ConsultationID = ?";
+        $search_params[] = $search_term;
+        $types .= 'i';
+    }
+}
+
+$sql .= " GROUP BY clt.CLT_ID ORDER BY result_date DESC";
+
+$stmt = $conn->prepare($sql);
+if (!empty($search_term)) {
+    $stmt->bind_param($types, ...$search_params);
+}
 $stmt->execute();
 $completed_tests = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
@@ -57,6 +84,7 @@ $stmt->close();
         .container { width: 80%; margin: 2em auto; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 0.8em; text-align: left; border-bottom: 1px solid #ddd; }
+        .search-form { margin-bottom: 2em; }
     </style>
 </head>
 <body>
@@ -65,6 +93,18 @@ $stmt->close();
         <nav><a href="index.php">Pending Tests</a> | <a href="../logout.php">Logout</a></nav>
     </header>
     <div class="container">
+        <div class="search-form">
+            <form action="" method="GET">
+                <select name="search_by">
+                    <option value="reg_no" <?php if($search_by == 'reg_no') echo 'selected'; ?>>Reg No</option>
+                    <option value="mobile_no" <?php if($search_by == 'mobile_no') echo 'selected'; ?>>Mobile No</option>
+                    <option value="consultation_id" <?php if($search_by == 'consultation_id') echo 'selected'; ?>>Consultation ID</option>
+                </select>
+                <input type="text" name="search_term" placeholder="Search..." value="<?php echo htmlspecialchars($search_term); ?>">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+
         <table>
             <thead>
                 <tr>
