@@ -109,6 +109,7 @@ $stmt->close();
             <thead>
                 <tr>
                     <th>Result Date</th>
+                    <th>Reg No</th>
                     <th>Pet Name</th>
                     <th>Test Name</th>
                     <th>Entered By</th>
@@ -120,6 +121,7 @@ $stmt->close();
                     <?php foreach ($completed_tests as $test): ?>
                         <tr>
                             <td><?php echo date('d-m-Y H:i', strtotime($test['result_date'])); ?></td>
+                            <td><?php echo htmlspecialchars($test['RegNo']); ?></td>
                             <td><?php echo htmlspecialchars($test['petnam']); ?></td>
                             <td><?php echo htmlspecialchars($test['lab_test_name'] ?: $test['CustomTestName']); ?></td>
                             <td><?php echo htmlspecialchars($test['entered_by_username']); ?></td>
@@ -132,7 +134,7 @@ $stmt->close();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="5">No completed lab results found.</td>
+                        <td colspan="6">No completed lab results found.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
