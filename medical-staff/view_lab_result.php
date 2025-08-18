@@ -65,6 +65,7 @@ $stmt->close();
     </header>
     <div class="container">
         <a href="print_results.php?consultation_id=<?php echo $test_info['ConsultationID']; ?>" target="_blank" class="print-button no-print" style="padding: 10px; background: #5cb85c; color: white; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; margin-bottom: 20px;">Print All Results for this Consultation</a>
+        <a href="print_single_test.php?clt_id=<?php echo $clt_id; ?>" target="_blank" class="print-button no-print" style="padding: 10px; background: #4cae4c; color: white; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; margin-bottom: 20px;">Print This Test</a>
         <h3>Test for <?php echo htmlspecialchars($test_info['petnam']); ?></h3>
         <h2><?php echo htmlspecialchars($test_info['lab_test_name'] ?: $test_info['CustomTestName']); ?></h2>
 
