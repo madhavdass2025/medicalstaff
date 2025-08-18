@@ -17,8 +17,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'collect_sample' && isset($_GET
 }
 
 // Fetch all prescribed lab tests, grouped by consultation
-// This is a complex query to get all statuses in one go.
-// Note: This assumes a 'Paid' status in the `bill` table indicates payment.
 $query = "
     SELECT
         c.ConsultationID,
@@ -35,24 +33,14 @@ $query = "
     JOIN registration p ON c.RegID = p.RegID
     JOIN consultation_lab_tests clt ON c.ConsultationID = clt.ConsultationID
     LEFT JOIN laboratory l ON clt.LabTestID = l.Lid
-    LEFT JOIN billlaboratory bl ON clt.LabTestID = bl.labID AND p.RegNo = bl.regID -- This join is an assumption
+    LEFT JOIN billlaboratory bl ON clt.LabTestID = bl.labID AND p.RegNo = bl.regID
     LEFT JOIN lab_test_results ltr ON clt.CLT_ID = ltr.CLT_ID AND ltr.is_deleted = 0
-    ORDER BY c.ConsultationDate DESC, c.ConsultationID, clt.CLT_ID
+    GROUP BY clt.CLT_ID
+    ORDER BY c.ConsultationDate DESC, c.ConsultationID
 ";
 
 $result = $conn->query($query);
 $all_tests = $result->fetch_all(MYSQLI_ASSOC);
-
-// Group tests by consultation
-$consultations = [];
-foreach ($all_tests as $test) {
-    $consultations[$test['ConsultationID']]['details'] = [
-        'ConsultationDate' => $test['ConsultationDate'],
-        'petnam' => $test['petnam'],
-        'RegNo' => $test['RegNo']
-    ];
-    $consultations[$test['ConsultationID']]['tests'][] = $test;
-}
 
 ?>
 <!DOCTYPE html>
@@ -61,60 +49,61 @@ foreach ($all_tests as $test) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lab Test Status Overview</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
     <style>
         body { display: block; }
         .container { width: 90%; margin: 2em auto; }
-        .consultation-group { border: 1px solid #ccc; padding: 1em; margin-bottom: 1.5em; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 0.8em; text-align: left; border-bottom: 1px solid #ddd; }
     </style>
 </head>
 <body>
     <header>
-        <h1>Lab Test Status Overview</h1>
-        <nav><a href="index.php">Pending Tasks</a> | <a href="../logout.php">Logout</a></nav>
+        <h1>Complete Consultation & Lab Status List</h1>
+        <nav><a href="index.php">Main Dashboard</a> | <a href="../logout.php">Logout</a></nav>
     </header>
     <div class="container">
-        <?php if (count($consultations) > 0): ?>
-            <?php foreach ($consultations as $cid => $data): ?>
-                <div class="consultation-group">
-                    <h3>
-                        Consultation #<?php echo $cid; ?>
-                        (<?php echo date('d-m-Y', strtotime($data['details']['ConsultationDate'])); ?>) -
-                        <?php echo htmlspecialchars($data['details']['petnam']); ?>
-                    </h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Test Name</th>
-                                <th>Payment Status</th>
-                                <th>Sample Status</th>
-                                <th>Result Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($data['tests'] as $test): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($test['lab_test_name'] ?: $test['CustomTestName']); ?></td>
-                                    <td><?php echo $test['PaymentStatus']; ?></td>
-                                    <td>
-                                        <?php if ($test['SampleCollected']): ?>
-                                            <span style="color: green;">Collected</span>
-                                        <?php else: ?>
-                                            <a href="?action=collect_sample&clt_id=<?php echo $test['CLT_ID']; ?>">Mark as Collected</a>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td><?php echo $test['ResultStatus']; ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <p>No lab tests found.</p>
-        <?php endif; ?>
+        <table id="lab_status_table" class="display">
+            <thead>
+                <tr>
+                    <th>Consultation ID</th>
+                    <th>Date</th>
+                    <th>Reg No</th>
+                    <th>Pet Name</th>
+                    <th>Test Name</th>
+                    <th>Payment Status</th>
+                    <th>Sample Status</th>
+                    <th>Result Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($all_tests as $test): ?>
+                    <tr>
+                        <td><?php echo $test['ConsultationID']; ?></td>
+                        <td><?php echo date('d-m-Y', strtotime($test['ConsultationDate'])); ?></td>
+                        <td><?php echo htmlspecialchars($test['RegNo']); ?></td>
+                        <td><?php echo htmlspecialchars($test['petnam']); ?></td>
+                        <td><?php echo htmlspecialchars($test['lab_test_name'] ?: $test['CustomTestName']); ?></td>
+                        <td><?php echo $test['PaymentStatus']; ?></td>
+                        <td>
+                            <?php if ($test['SampleCollected']): ?>
+                                <span style="color: green;">Collected</span>
+                            <?php else: ?>
+                                <a href="?action=collect_sample&clt_id=<?php echo $test['CLT_ID']; ?>">Mark as Collected</a>
+                            <?php endif; ?>
+                        </td>
+                        <td><?php echo $test['ResultStatus']; ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     </div>
+
+    <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <script>
+    $(document).ready( function () {
+        $('#lab_status_table').DataTable();
+    } );
+    </script>
 </body>
 </html>
